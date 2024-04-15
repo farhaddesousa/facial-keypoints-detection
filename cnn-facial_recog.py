@@ -7,7 +7,8 @@ class CNNModel(nn.Module):
     def __init__(self):
         super(CNNModel, self).__init__()
         # Define the convolutional layers
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
+        # one layer for greyscale
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         # Define the max pooling layers
