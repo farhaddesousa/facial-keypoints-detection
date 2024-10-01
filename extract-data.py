@@ -17,7 +17,7 @@ def getTrainData(i):
     return data
     
 
-data = getTrainData(50)
+data = getTrainData(2300)
 print(data)
 print(type(data))
 

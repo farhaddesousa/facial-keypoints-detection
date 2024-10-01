@@ -1,17 +1,12 @@
-import os
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
-import pandas as pd
-
-import torch
-import pandas as pd
 from torch.utils.data import Dataset, DataLoader
-
-import numpy as np
-
+print("Hello world")
 
 class FacialDataset(Dataset):
-    """Digit Recognizer dataset."""
+    """Facial  Keypoints dataset."""
 
     def __init__(self, csv_file, transform=None):
         """
@@ -27,14 +22,14 @@ class FacialDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # get data for corresponding index: it contains both image data and label
-        sample = self.data.iloc[idx, :]
-        
-        labels = sample.iloc[:30]
-        image = np.array(list(map(int, sample.iloc[30].split())))
+        sample = self.data.iloc[idx]
+
+        labels = torch.tensor(sample[:30].values.astype(np.float32))
+        image = torch.tensor(list(map(int, sample[30].split())), dtype=torch.float32).view(1, 96, 96)  # Reshaping to 1x96x96
 
         if self.transform:
             image = self.transform(image)
+
         return image, labels
 
 transform = torch.tensor
@@ -44,7 +39,7 @@ train_dataset = FacialDataset(csv_file=train_csv_file_path, transform=transform)
 
 #testing if FacialDataset works
 image, labels = train_dataset.__getitem__(5)
-
+print("Hello world")
 print(image)
 print(labels)
 
@@ -102,12 +97,13 @@ class CNNModel(nn.Module):
 model = CNNModel()
 
 # Print the model architecture
-print(model)
+#print(model)
 
 #Defining loss function
 class EuclideanLoss(nn.Module):
-    def init(self):
-        super(EuclideanLoss, self).init()
+    def __init__(self):
+        super(EuclideanLoss, self).__init__()
+
 
     def forward(self, predicted, actual):
         # Reshape predicted and actual if they are not already in the shape [batch_size, num_keypoints, 2]
@@ -121,10 +117,60 @@ class EuclideanLoss(nn.Module):
 loss_fn = EuclideanLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
+# for idx, (images, keypoints) in enumerate(train_dataloader):
+#     print(idx)
+#     #print(images)
+#     print(keypoints)
+#     #break  # remove or adjust as needed
+def train(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)
+    model.train()
+    for idx, (images, keypoints) in enumerate(dataloader):
+        images, keypoints = images.to(device).float(), keypoints.to(device)
 
-for batch, (X, y) in enumerate(train_dataloader):
-    print(batch)
-    print((X, y))
-    break
+        # Compute prediction error
+        pred = model(images)
+        loss = loss_fn(pred, keypoints)
+
+        # Backpropagation
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        if idx % 100 == 0:
+            loss, current = loss.item(), (idx + 1) * len(images)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+# def test(dataloader, model, loss_fn):
+#     size = len(dataloader.dataset)
+#     num_batches = len(dataloader)
+#     model.eval()
+#     test_loss, correct = 0, 0
+#     with torch.no_grad():
+#         for X, y in dataloader:
+#             X, y = X.to(device).float(), y.to(device)
+#             pred = model(X)
+#             test_loss += loss_fn(pred, y).item()
+#             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+#     test_loss /= num_batches
+#     correct /= size
+#     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+
+
+#Train and test model:
+# epochs = 5
+# for t in range(epochs):
+#     print(f"Epoch {t+1}\n-------------------------------")
+#     train(train_dataloader, model, loss_fn, optimizer)
+#     #test(test_dataloader, model, loss_fn)
+# print("Training and Testing complete")
+
+
+# Set print options to increase the threshold for printing
+# torch.set_printoptions(threshold=10_000)
+
+
+
+
 
 
