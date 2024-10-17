@@ -72,4 +72,4 @@ for idx in range(len(train_dataset)):
     if idx % 100 == 0:
         print(f"Saved {idx} images...")  # Print progress every 100 images
 
-print("Finished saving all roated training images.")
+print("Finished saving all rotated training images.")
