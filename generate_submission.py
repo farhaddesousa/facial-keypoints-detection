@@ -6,7 +6,7 @@ id_lookup_table = pd.read_csv('dataset/IdLookupTable.csv')
 sample_submission = pd.read_csv('dataset/SampleSubmission.csv')
 
 # Load the predictions saved from your previous script
-all_predictions = np.load('predictions.npy')  # Shape: (num_samples, 15, 2)
+all_predictions = np.load('predictions_rotated.npy')  # Shape: (num_samples, 15, 2)
 
 # Feature mapping (15 keypoints, x and y values)
 keypoint_names = [
@@ -52,6 +52,6 @@ for index, row in id_lookup_table.iterrows():
 submission_df = pd.DataFrame(submission_data, columns=['RowId', 'Location'])
 
 # Save to CSV
-submission_df.to_csv('submission.csv', index=False)
+submission_df.to_csv('submission_rotated.csv', index=False)
 
-print("Submission file created successfully: submission.csv")
+print("Submission file created successfully: submission_rotated.csv")

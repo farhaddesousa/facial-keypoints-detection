@@ -15,7 +15,7 @@ dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
 # Load the model
 model = CNNModel()
-model.load_state_dict(torch.load('best_model.pth', map_location=torch.device('cpu')))
+model.load_state_dict(torch.load('best_model_rotated_training_data.pth', map_location=torch.device('cpu')))
 model.eval()
 
 # Function to predict keypoints
@@ -46,8 +46,8 @@ all_predictions_array = np.array(all_predictions)  # Shape: (num_samples, 15, 2)
 all_images_array = np.array(all_images)
 
 # Save to a NumPy binary file
-np.save('predictions.npy', all_predictions_array)
-np.save('images.npy', all_images_array)
+np.save('predictions_rotated.npy', all_predictions_array)
+np.save('rotated_images.npy', all_images_array)
 
 
 

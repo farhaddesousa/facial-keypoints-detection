@@ -33,13 +33,13 @@ def visualize_image(index, all_images, all_predictions, output_dir):
     img_with_keypoints.save(f"{output_dir}/predicted_keypoints_{index}.jpg")  # Save the image
 
 # Create folder 'test_images_with_keypoints' if it doesn't exist
-output_dir = 'test_images_with_keypoints'
+output_dir = 'test_images_with_keypoints_rotated_model'
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 # Load the numpy arrays
-all_predictions = np.load('predictions.npy')  # Shape: (1783, 15, 2)
-all_images = np.load('images.npy')  # Shape: (1783, 96, 96)
+all_predictions = np.load('predictions_rotated.npy')  # Shape: (1783, 15, 2)
+all_images = np.load('test_images.npy')  # Shape: (1783, 96, 96)
 
 # Loop through all 1783 images and save them with keypoints
 for i in range(all_images.shape[0]):
