@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-train_data = pd.read_csv("dataset/training.csv")
+train_data = pd.read_csv("../dataset/training.csv")
 
 def rotate_image_and_points(image_array, points, angle):
     """
@@ -106,7 +106,7 @@ def create_rotated_dataframe(original_df):
         points = original_df.iloc[i][:-1].to_numpy()  # Extract facial feature points (x, y) pairs
 
         # Generate a random angle between 0 and 360 degrees
-        angle = np.random.uniform(0, 360)
+        angle = np.random.uniform(-15, 15)
 
         # Rotate the image and points
         rotated_image, rotated_points = rotate_image_and_points(image_data, points, angle)
@@ -129,7 +129,7 @@ def create_rotated_dataframe(original_df):
 #rotated_df = create_rotated_dataframe(train_data)
 
 # Step 1: Load the original dataset and drop NAs
-train_csv_file_path = 'dataset/training.csv'
+train_csv_file_path = '../dataset/training.csv'
 train_data = pd.read_csv(train_csv_file_path)
 train_data = train_data.dropna()
 
@@ -144,5 +144,5 @@ rotated_data = pd.concat([train_data, rotated_df1, rotated_df2], ignore_index=Tr
 rotated_data = rotated_data.sample(frac=1).reset_index(drop=True)
 
 # Step 4: Save the combined dataset to a new CSV file
-rotated_data_path = 'dataset/rotated_training.csv'
+rotated_data_path = '../dataset/rotated_training_constrained.csv'
 rotated_data.to_csv(rotated_data_path, index=False)

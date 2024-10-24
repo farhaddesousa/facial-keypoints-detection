@@ -48,7 +48,7 @@ class FacialDataset(Dataset):
 
 # Load the dataset
 if __name__ == "__main__":
-    train_csv_file_path = '../dataset/training.csv'
+    train_csv_file_path = '../dataset/rotated_training_constrained.csv'
     train_dataset = FacialDataset(csv_file=train_csv_file_path)
 
     # Defining Train and Validation DataLoaders
@@ -186,7 +186,7 @@ if __name__ == "__main__":
         # Save the model if validation loss has decreased
         if validation_loss < best_validation_loss:
             best_validation_loss = validation_loss
-            model_path = 'best_model_rotated_training_data.pth'
+            model_path = '../saved_models_predictions_data/model_masked_rotated_training_data.pth'
             torch.save(model.state_dict(), model_path)
             print(f"Model saved to {model_path} with validation loss {best_validation_loss:>8f}")
 

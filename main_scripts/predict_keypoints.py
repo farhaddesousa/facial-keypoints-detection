@@ -9,13 +9,13 @@ from PIL import Image, ImageDraw
 from facial_keypoints_model import CNNModel, FacialDataset
 
 # Initialize the dataset and DataLoader
-test_set = 'dataset/test.csv'
-dataset = FacialDataset(test_set)
+test_set = '../dataset/test.csv'
+dataset = FacialDataset(test_set, train=False)
 dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
 
 # Load the model
 model = CNNModel()
-model.load_state_dict(torch.load('best_model_rotated_training_data.pth', map_location=torch.device('cpu')))
+model.load_state_dict(torch.load('../saved_models_predictions_data/model_masked_rotated_training_data.pth', map_location=torch.device('cpu')))
 model.eval()
 
 # Function to predict keypoints
@@ -30,7 +30,7 @@ all_images = []
 all_predictions = []
 
 # Iterate over the DataLoader and store predictions
-for idx, (images, labels) in enumerate(dataloader):
+for idx, images in enumerate(dataloader):
     img_tensor = images  # Shape: [1, 1, 96, 96]
     keypoints = predict_keypoints(model, img_tensor)
 
@@ -46,8 +46,8 @@ all_predictions_array = np.array(all_predictions)  # Shape: (num_samples, 15, 2)
 all_images_array = np.array(all_images)
 
 # Save to a NumPy binary file
-np.save('predictions_rotated.npy', all_predictions_array)
-np.save('rotated_images.npy', all_images_array)
+np.save('../saved_models_predictions_data/predictions_masked_rotated_constrained15.npy', all_predictions_array)
+np.save('../saved_models_predictions_data/masked_rotated_15_images.npy', all_images_array)
 
 
 
