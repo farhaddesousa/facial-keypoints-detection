@@ -10,11 +10,10 @@ import os  # For creating directories if needed
 class FacialDataset(Dataset):
     """Facial Keypoints dataset."""
 
-    def __init__(self, csv_file, transform=None):
+    def __init__(self, csv_file, transform=None, train=True):
         self.data = pd.read_csv(csv_file)
-        # Drop rows with any NaN values in the label columns
-        self.data = self.data.dropna()
         self.transform = transform
+        self.train = train
 
     def __len__(self):
         return len(self.data)
@@ -22,20 +21,34 @@ class FacialDataset(Dataset):
     def __getitem__(self, idx):
         sample = self.data.iloc[idx]
 
-        # Extract labels (all columns except 'Image')
-        labels = sample.drop('Image').values.astype(np.float32)
-
         # Extract image data
         image = np.array(sample['Image'].split(), dtype=np.float32).reshape(1, 96, 96)
         image = image / 255.0  # Normalize the image to [0, 1]
+        image = torch.tensor(image, dtype=torch.float32)
 
-        return torch.tensor(image), torch.tensor(labels)
+        if self.train:
+            # Extract labels (all columns except 'Image')
+            labels = sample.drop('Image').values.astype(np.float32)
 
+            # Create a mask where labels are not NaN
+            mask = ~np.isnan(labels)
+
+            # Replace NaNs in labels with zeros (since loss will ignore them)
+            labels = np.nan_to_num(labels, nan=0.0)
+
+            # Convert labels and mask to tensors
+            labels = torch.tensor(labels, dtype=torch.float32)
+            mask = torch.tensor(mask.astype(np.float32), dtype=torch.float32)
+
+            return image, labels, mask
+        else:
+            # For test data, return only the image
+            return image
 
 
 # Load the dataset
 if __name__ == "__main__":
-    train_csv_file_path = 'dataset/rotated_training.csv'
+    train_csv_file_path = '../dataset/training.csv'
     train_dataset = FacialDataset(csv_file=train_csv_file_path)
 
     # Defining Train and Validation DataLoaders
@@ -88,19 +101,25 @@ class CNNModel(nn.Module):
 model = CNNModel().to(device)
 
 # Define the loss function
-class EuclideanLoss(nn.Module):
+class MaskedMSELoss(nn.Module):
     def __init__(self):
-        super(EuclideanLoss, self).__init__()
+        super(MaskedMSELoss, self).__init__()
 
-    def forward(self, predicted, actual):
-        # Reshape predicted and actual to [batch_size, 15, 2]
-        predicted = predicted.view(-1, 15, 2)
-        actual = actual.view(-1, 15, 2)
-        # Compute the Euclidean distance between each pair of corresponding keypoints
-        loss = torch.norm(predicted - actual, dim=2).mean()
-        return loss
+    def forward(self, predicted, actual, mask):
+        # predicted, actual, mask are tensors of shape [batch_size, num_outputs]
+        # Compute squared differences
+        squared_diff = (predicted - actual) ** 2
+        # Apply mask
+        masked_squared_diff = squared_diff * mask
+        # Sum over all elements
+        loss = masked_squared_diff.sum()
+        # Sum over mask elements
+        total_mask = mask.sum()
+        # Compute mean loss
+        mean_loss = loss / total_mask.clamp(min=1e-8)  # Avoid division by zero
+        return mean_loss
 
-loss_fn = EuclideanLoss()
+loss_fn = MaskedMSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 # Define the training function
@@ -108,14 +127,16 @@ def train(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
     model.train()
     total_loss = 0
-    for idx, (images, keypoints) in enumerate(dataloader):
-        images, keypoints = images.to(device).float(), keypoints.to(device)
+    for idx, (images, keypoints, mask) in enumerate(dataloader):
+        images = images.to(device).float()
+        keypoints = keypoints.to(device)
+        mask = mask.to(device)
 
         # Forward pass
         pred = model(images)
 
         # Compute loss
-        loss = loss_fn(pred, keypoints)
+        loss = loss_fn(pred, keypoints, mask)
 
         # Backpropagation
         optimizer.zero_grad()
@@ -138,12 +159,15 @@ def test(dataloader, model, loss_fn):
     model.eval()
     test_loss = 0
     with torch.no_grad():
-        for images, keypoints in dataloader:
-            images, keypoints = images.to(device).float(), keypoints.to(device)
+        for images, keypoints, mask in dataloader:
+            images = images.to(device).float()
+            keypoints = keypoints.to(device)
+            mask = mask.to(device)
+
             pred = model(images)
 
             # Compute loss
-            loss = loss_fn(pred, keypoints)
+            loss = loss_fn(pred, keypoints, mask)
             test_loss += loss.item()
 
     average_loss = test_loss / num_batches
@@ -167,4 +191,3 @@ if __name__ == "__main__":
             print(f"Model saved to {model_path} with validation loss {best_validation_loss:>8f}")
 
     print("Training complete")
-
